@@ -1,6 +1,7 @@
 ﻿using Dapper;
 using Microsoft.Data.SqlClient;
 using Models;
+using System.Configuration;
 
 namespace Repositories
 {
@@ -10,7 +11,8 @@ namespace Repositories
 
         public PedidoRepository()
         {
-            _conn = "Server=127.0.0.1; Database=Dapper; User Id=sa; Password=SqlServer2019!; TrustServerCertificate=True";
+            //_conn = "Server=127.0.0.1; Database=Dapper; User Id=sa; Password=SqlServer2019!; TrustServerCertificate=True";
+            _conn = ConfigurationManager.ConnectionStrings["StringConnection"].ConnectionString;
         }
 
         public bool Inserir(Pedido pedido)
@@ -20,7 +22,9 @@ namespace Repositories
             using (var db = new SqlConnection(_conn))
             {
                 db.Open();
-                var result = db.Execute("INSERT INTO TB_PEDIDO (Descricao, Mesa) values (@Descricao, @Mesa)", pedido);
+
+                db.Execute("INSERT INTO TB_PEDIDO (Descricao, Mesa, IdItem) values (@Descricao, @Mesa, @IdItem)",
+                   new { Descricao = pedido.Descricao, Mesa = pedido.Mesa, IdItem = pedido.Item.Id });
                 status = true;
                 db.Close();
 
@@ -28,5 +32,21 @@ namespace Repositories
             return status;
         }
 
+        public List<Pedido> ObterTodos()
+        {
+            List<Pedido> pedidos = new List<Pedido>();
+
+            using (var db = new SqlConnection(_conn))
+            {
+                db.Open();
+
+                var list = db.Query<Pedido, Item, Pedido>(Pedido.OBTER, (pedido, item) =>
+                {
+                    pedido.Item = item;
+                    return pedido;
+                }, splitOn: "Id");
+                return (List<Pedido>)list;
+            }
+        }
     }
 }

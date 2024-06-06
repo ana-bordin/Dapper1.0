@@ -16,5 +16,10 @@ namespace Controllers
         {
             return _pedidoService.Inserir(pedido);
         }
+
+        public List<Pedido> ObterTodos()
+        {
+            return _pedidoService.ObterTodos();
+        }
     }
 }
